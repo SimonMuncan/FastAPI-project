@@ -1,23 +1,18 @@
 [project]
-name = "Final project"
+name = "final_project"
 description = "Project management/profiles dashboard - a service to create, update, share, and delete projects information(details, attached documents)"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-    {name="Simon Muncan",email ="simon_muncan@epa.com"}
+    {name="Simon Muncan",email ="simon_muncan@epam.com"}
 ]
+dynamic = ["dependencies"]
+
 [project.urls]
 Homepage = "http://localhost/"
 
-[project.optional-dependencies]
-standard = [
-    "fastapi[standard] >= 0.115.0",
-    "uvicorn>=0.34.0"
-]
-all =[
-    "fastapi[standard] >= 0.115.0",
-    "uvicorn>=0.34.0"
-]
+[project.setuptools.dynamic]
+dependencies = {file =["requirements.txt"]}
 
 [tool.pdm.build]
 source-includes = [
