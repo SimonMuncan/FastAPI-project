@@ -1,21 +1,45 @@
 [project]
 name = "final_project"
+version = "0.1.0"  # Add your project version here
 description = "Project management/profiles dashboard - a service to create, update, share, and delete projects information(details, attached documents)"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-    {name="Simon Muncan",email ="simon_muncan@epam.com"}
+    {name = "Simon Muncan", email = "simon_muncan@epam.com"}
 ]
 dynamic = ["dependencies"]
 
 [project.urls]
 Homepage = "http://localhost/"
 
-[project.setuptools.dynamic]
-dependencies = {file =["requirements.txt"]}
+[tool.black]
+line-length = 120
+target-version = ["py38"]
 
-[tool.pdm.build]
-source-includes = [
-    "tests/",
-    "requirements*.txt"
+[tool.flake8]
+max-line-length = 140
+extend-ignore = ["E203"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "env",
+    "venv",
+    ".venv",
+    "build",
+    "dist",
 ]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+# Correct place for setuptools config
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[build-system.dynamic]
+dependencies = {file = ["requirements.txt"]}
