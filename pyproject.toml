@@ -1,21 +1,43 @@
 [project]
 name = "final_project"
+version = "0.1.0"
 description = "Project management/profiles dashboard - a service to create, update, share, and delete projects information(details, attached documents)"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-    {name="Simon Muncan",email ="simon_muncan@epam.com"}
+    {name = "Simon Muncan", email = "simon_muncan@epam.com"}
 ]
-dynamic = ["dependencies"]
+dependencies = [
+    "fastapi[standard]==0.115.0",
+    "uvicorn==0.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "mypy==1.15.0",
+    "flake8==7.1.1",
+    "black==25.1.0",
+    "isort==6.0.0",
+    "pre-commit==4.1.0",
+]
 
 [project.urls]
 Homepage = "http://localhost/"
 
-[project.setuptools.dynamic]
-dependencies = {file =["requirements.txt"]}
+[tool.mypy]
+files = "src"
+python_version = 3.13
+strict = true
 
-[tool.pdm.build]
-source-includes = [
-    "tests/",
-    "requirements*.txt"
-]
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.black]
+line-length = 120
+target-version = ["py313"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

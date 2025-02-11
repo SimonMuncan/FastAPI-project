@@ -1,0 +1,37 @@
+name: CI
+on:
+  push:
+    paths:
+      - '**'
+  pull_request:
+    paths:
+      - '**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version : '3.13'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Type checking
+        run: |
+          mypy src
+      - name: Code formating
+        run: |
+          black . --check
+      - name: Lint code
+        run: |
+          flake8 src tests
+      - name: Sort imports
+        run: |
+          isort src tests
+      - name: Run tests
+        run: |
+          pytest tests/.
