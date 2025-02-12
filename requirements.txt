@@ -1,5 +1,5 @@
 fastapi[standard]==0.115.0
 uvicorn==0.34.0
 pytest==8.3.4
-black==25.1.0
+mypy==1.15.0
 flake8==7.1.1
