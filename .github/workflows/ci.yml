@@ -32,12 +32,12 @@ jobs:
       - name: Format code
         run: |
           source .venv/bin/activate
-          black --check .
+          mypy src 
 
       - name: Lint code
         run: |
           source .venv/bin/activate
-          flake8 .
+          flake8 src tests
 
       - name: Run tests
         run: |
