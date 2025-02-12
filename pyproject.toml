@@ -1,6 +1,6 @@
 [project]
 name = "final_project"
-version = "0.1.0"  # Add your project version here
+version = "0.1.0"
 description = "Project management/profiles dashboard - a service to create, update, share, and delete projects information(details, attached documents)"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -12,22 +12,19 @@ dynamic = ["dependencies"]
 [project.urls]
 Homepage = "http://localhost/"
 
-[tool.black]
-line-length = 120
-target-version = ["py38"]
-
-[tool.flake8]
-max-line-length = 140
-extend-ignore = ["E203"]
-exclude = [
-    ".git",
-    "__pycache__",
-    "env",
-    "venv",
-    ".venv",
-    "build",
-    "dist",
-]
+[tool.mypy]
+files =["src"]
+ignore_missing_imports = true
+strict_equality = true
+check_untyped_defs = true
+disallow_any_generics = true
+no_implicit_optional = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+no_implicit_reexport = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -36,7 +33,6 @@ testpaths = [
     "tests",
 ]
 
-# Correct place for setuptools config
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
