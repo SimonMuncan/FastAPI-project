@@ -25,7 +25,7 @@ async def create_project(project: Project) -> object:
 
 
 @app.get("/projects/")
-async def get_all_projects() -> list:
+async def get_all_projects() -> object:
     return projects
 
 
@@ -38,7 +38,7 @@ async def get_project_details(project_id: int) -> object:
 
 
 @app.put("/project/{project_id}/info")
-async def update_project_details(project_id: int, description: str) -> object:
+async def update_project_details(project_id: int, description: str) -> Project:
     project = next((p for p in projects if p.project_id == project_id), None)
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
