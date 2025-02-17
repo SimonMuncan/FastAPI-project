@@ -1,3 +1,4 @@
 .venv
 /.idea/
 /src/final_project.egg-info/
+build/
