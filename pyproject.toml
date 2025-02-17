@@ -10,6 +10,7 @@ authors = [
 dependencies = [
     "fastapi[standard]==0.115.0",
     "uvicorn==0.34.0",
+    "pydantic==2.10.6",
 ]
 
 [project.optional-dependencies]
