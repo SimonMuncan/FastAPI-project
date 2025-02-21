@@ -12,6 +12,7 @@ dependencies = [
     "uvicorn==0.34.0",
     "sqlalchemy==2.0.38",
     "psycopg2-binary==2.9.10",
+    "alembic==1.14.1",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +32,7 @@ Homepage = "http://localhost/"
 files = "src"
 python_version = 3.13
 strict = true
+disable_error_code = "misc"
 
 [tool.isort]
 profile = "black"
