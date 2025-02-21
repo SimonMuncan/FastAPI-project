@@ -23,4 +23,3 @@ class Document(BaseModel):
     document_id: uuid.UUID = Field(default_factory=uuid.uuid4)
     title: str
     file_path: str
-

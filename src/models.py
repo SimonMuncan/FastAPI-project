@@ -1,4 +1,3 @@
-
 import uuid
 from sqlalchemy import Boolean, Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -46,4 +45,3 @@ class Documents(Base):
     title = name = Column(String, index=True)
     file_path = Column(String, nullabke=False)
     project = relationship("Projects", back_populates="documents")
-
