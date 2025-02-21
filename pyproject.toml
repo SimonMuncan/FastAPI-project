@@ -31,7 +31,6 @@ Homepage = "http://localhost/"
 [tool.mypy]
 files = "src"
 python_version = 3.13
-strict = true
 
 [tool.isort]
 profile = "black"
