@@ -1,6 +1,6 @@
 import uuid
-from sqlalchemy import Boolean, Column, ForeignKey, String
-from sqlalchemy.dialects.postgresql import UUID
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import UUID as sa_uuid
 from sqlalchemy.orm import relationship
 
 from src.service import Base
@@ -9,39 +9,40 @@ from src.service import Base
 class Projects(Base):
     __tablename__ = "projects"
 
-    project_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, index=True)
-    description = Column(String, index=True)
-    user_projects = relationship("UserProject", back_populates="project")
-    document = relationship("Documents", back_populates="project")
+    id = sa.Column(sa_uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = sa.Column(sa.String, nullable=False)
+    description = sa.Column(sa.String, nullable=False)
+    users_projects = relationship("UserProject", back_populates="projects")
+    documents = relationship("Documents", back_populates="project")
 
 
 class Users(Base):
     __tablename__ = "users"
 
-    user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    password = Column(String, nullable=False)
-    user_projects = relationship("UserProject", back_populates="user", cascade="all, delete-orphan")
+    id = sa.Column(sa_uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = sa.Column(sa.String, nullable=False)
+    email = sa.Column(sa.String, unique=True, nullable=False)
+    hashed_password = sa.Column(sa.String, nullable=False)
+    users_projects = relationship("UserProject", back_populates="users", cascade="all, delete-orphan")
 
 
 class UserProject(Base):
-    __tablename__ = "m2m_user_project"
+    __tablename__ = "user_project"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"))
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    project_admin = Column(Boolean, default=False)
-    user = relationship("Users", back_populates="user_projects")
-    project = relationship("Projects", back_populates="user_projects")
+    id = sa.Column(sa_uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = sa.Column(sa_uuid(as_uuid=True), sa.ForeignKey("projects.id"))
+    user_id = sa.Column(sa_uuid(as_uuid=True), sa.ForeignKey("users.id"))
+    is_admin = sa.Column(sa.Boolean, default=False)
+    users = relationship("Users", back_populates="users_projects")
+    projects = relationship("Projects", back_populates="users_projects")
+    __table_args__ = (sa.UniqueConstraint("project_id", "is_admin", name="_unique_admin_per_project"),)
 
 
 class Documents(Base):
     __tablename__ = "documents"
 
-    document_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
-    title = name = Column(String, index=True)
-    file_path = Column(String, nullabke=False)
+    id = sa.Column(sa_uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = sa.Column(sa_uuid(as_uuid=True), sa.ForeignKey("projects.id"), nullable=False)
+    title = sa.Column(sa.String, nullable=False)
+    file_path = sa.Column(sa.String, nullable=False)
     project = relationship("Projects", back_populates="documents")

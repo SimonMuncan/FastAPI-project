@@ -32,7 +32,6 @@ Homepage = "http://localhost/"
 files = "src"
 python_version = 3.13
 strict = true
-disable_error_code = "misc"
 
 [tool.isort]
 profile = "black"
