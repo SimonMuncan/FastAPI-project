@@ -1,7 +1,8 @@
 import uuid
+
 import sqlalchemy as sa
 import sqlalchemy.dialects.postgresql as sa_di
-from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -14,7 +15,9 @@ class Projects(Base):
     id: Mapped[uuid.UUID] = mapped_column(sa_di.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(sa.String, nullable=False)
     description: Mapped[str] = mapped_column(sa.String, nullable=True)
-    users_projects: Mapped[list["UserProject"]] = relationship("UserProject", back_populates="projects")
+    users_projects: Mapped[list["UserProject"]] = relationship(
+        "UserProject", back_populates="projects", cascade="all, delete-orphan"
+    )
     documents: Mapped[list["Documents"]] = relationship("Documents", back_populates="project")
 
 

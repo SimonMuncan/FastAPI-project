@@ -40,7 +40,6 @@ def upgrade() -> None:
         "user_project",
         sa.Column("project_id", UUID(as_uuid=True), sa.ForeignKey("projects.id"), primary_key=True),
         sa.Column("user_id", UUID(as_uuid=True), sa.ForeignKey("users.id"), primary_key=True),
-        sa.Column("id", UUID(as_uuid=True), nullable=False),
         sa.Column("is_admin", sa.Boolean(), nullable=False, default=False),
         sa.UniqueConstraint("project_id", "is_admin", name="_unique_admin_per_project"),
     )
