@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, EmailStr, AnyUrl
 
 class Project(BaseModel):
     name: str
-    description: str | None = None
+    description: str
 
 
 class ProjectDetails(Project):
