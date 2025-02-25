@@ -38,8 +38,10 @@ def test_get_project(
     mock_db: MagicMock, project_id: uuid.UUID, mock_project: models.Projects, mock_project_2: ProjectDetails
 ) -> None:
     mock_db.query.return_value.get.return_value = mock_project
-    result: ProjectDetails = get_project(project_id, mock_db)
-    assert result == ProjectDetails(
+    result = get_project(project_id, mock_db)
+    assert ProjectDetails(
+        project_id=uuid.UUID(str(result.id)), name=str(result.name), description=str(result.description)
+    ) == ProjectDetails(
         project_id=mock_project_2.project_id, name=mock_project_2.name, description=mock_project_2.description
     )
 
@@ -71,21 +73,20 @@ def test_create_project(mock_db: MagicMock, project_data: Project) -> None:
 
 
 def test_update_project_details(mock_db: MagicMock, project_id: uuid.UUID) -> None:
-    mock_project_details: ProjectDetails = ProjectDetails(
-        project_id=project_id, name="Old Name", description="Old Description"
-    )
+    mock_project: models.Projects = models.Projects(id=project_id, name="Old Name", description="Old Description")
     project_data: Project = Project(name="New Name", description="New Description")
 
-    result: ProjectDetails = update_project_details_(mock_project_details, project_data, mock_db)
+    result = update_project_details_(mock_project, project_data, mock_db)
     expected_result = ProjectDetails(
-        project_id=mock_project_details.project_id, name=project_data.name, description=project_data.description
+        project_id=mock_project.id, name=project_data.name, description=project_data.description
     )
-    assert result == expected_result
+    assert (
+        ProjectDetails(project_id=uuid.UUID(str(result.id)), name=str(result.name), description=str(result.description))
+        == expected_result
+    )
 
 
 def test_delete_project(mock_db: MagicMock, project_id: uuid.UUID) -> None:
-    mock_project_details: ProjectDetails = ProjectDetails(
-        project_id=project_id, name="Test Project", description="Test Description"
-    )
-    result: ProjectDetails = delete_project_(mock_project_details, mock_db)
-    assert result == mock_project_details
+    mock_project: models.Projects = models.Projects(id=project_id, name="Test Project", description="Test Description")
+    result = delete_project_(mock_project, mock_db)
+    assert result == mock_project

@@ -3,7 +3,7 @@ import uuid
 from fastapi import FastAPI, HTTPException, Depends
 from src.schemas import ProjectDetails, Project
 from src.service import SessionLocal
-from typing import Generator
+from typing import Generator, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 import src.models as models
@@ -19,11 +19,11 @@ def get_db() -> Generator[Session]:
         db.close()
 
 
-def get_project(project_id: uuid.UUID, db: Session) -> ProjectDetails:
+def get_project(project_id: uuid.UUID, db: Session) -> models.Projects | Any:
     project = db.query(models.Projects).get(project_id)
     if project is None:
         raise HTTPException(status_code=404, detail=f"ProjectDetails {project_id} not found")
-    return ProjectDetails(project_id=project.id, name=project.name, description=project.description)
+    return project
 
 
 def create_project_(project: Project, db: Session) -> ProjectDetails:
@@ -44,7 +44,7 @@ def get_projects_(db: Session) -> list[ProjectDetails]:
     ]
 
 
-def update_project_details_(project: ProjectDetails, project_data: Project, db: Session) -> ProjectDetails:
+def update_project_details_(project: models.Projects, project_data: Project, db: Session) -> models.Projects:
     if project_data.name:
         project.name = project_data.name
     if project_data.description:
@@ -55,7 +55,7 @@ def update_project_details_(project: ProjectDetails, project_data: Project, db: 
     return project
 
 
-def delete_project_(project: ProjectDetails, db: Session) -> ProjectDetails:
+def delete_project_(project: models.Projects, db: Session) -> models.Projects:
     db.delete(project)
     db.commit()
     return project
@@ -73,14 +73,20 @@ async def create_project(project: Project, db: Session = Depends(get_db)) -> Pro
 
 @app.get("/project/{project_id}/info")
 async def get_project_details(project_id: uuid.UUID, db: Session = Depends(get_db)) -> ProjectDetails:
-    return get_project(project_id, db)
+    project = get_project(project_id, db)
+    return ProjectDetails(
+        project_id=uuid.UUID(str(project.id)), name=str(project.name), description=str(project.description)
+    )
 
 
 @app.put("/project/{project_id}/info")
 async def update_project_details(
     project_id: uuid.UUID, project_data: Project, db: Session = Depends(get_db)
 ) -> ProjectDetails:
-    return update_project_details_(get_project(project_id, db), project_data, db)
+    project = update_project_details_(get_project(project_id, db), project_data, db)
+    return ProjectDetails(
+        project_id=uuid.UUID(str(project.id)), name=str(project.name), description=str(project.description)
+    )
 
 
 @app.delete("/project/{project_id}", status_code=204)
