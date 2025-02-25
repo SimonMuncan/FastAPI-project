@@ -1,6 +1,6 @@
 import uuid
 from datetime import timedelta, datetime, timezone
-from typing import Annotated, Generator
+from typing import Annotated, Generator, Any
 from fastapi import APIRouter, Depends, HTTPException
 from src.schemas import User, Token
 from sqlalchemy.orm import Session
@@ -70,7 +70,7 @@ def authenticate_user(username: str, password: str, db: Session) -> Users | None
     return user
 
 
-def create_access_token(name: str, user_id: uuid.UUID, expires_delta: timedelta) -> str:
+def create_access_token(name: str, user_id: uuid.UUID, expires_delta: timedelta) -> str | Any:
     if SECRET_KEY is None or ALGORITHM is None:
         raise ValueError("SECRET_KEY or ALGORITHM environment variable is not set")
     payload = {"sub": name, "id": str(user_id), "exp": datetime.now(timezone.utc) + expires_delta}
