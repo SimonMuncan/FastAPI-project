@@ -1,60 +1,97 @@
 import uuid
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+
+from src import auth
 from src.schemas import ProjectDetails, Project
+from src.service import SessionLocal
+from typing import Generator, Any
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+import src.models as models
 
 app = FastAPI()
-projects: list[ProjectDetails] = []
+app.include_router(auth.router)
 
 
-def get_project(project_id: uuid.UUID) -> ProjectDetails:
-    project = next((p for p in projects if p.project_id == project_id), None)
+def get_db() -> Generator[Session]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_project(project_id: uuid.UUID, db: Session) -> models.Projects | Any:
+    project = db.query(models.Projects).get(project_id)
     if project is None:
         raise HTTPException(status_code=404, detail=f"ProjectDetails {project_id} not found")
     return project
 
 
-def create_project_(project: Project) -> ProjectDetails:
-    new_project = ProjectDetails(**project.model_dump())
-    projects.append(new_project)
-    return new_project
+def create_project_(project: Project, db: Session) -> ProjectDetails:
+    new_project = models.Projects(id=uuid.uuid4(), name=project.name, description=project.description)
+    db.add(new_project)
+    db.commit()
+    db.refresh(new_project)
+    return ProjectDetails(**new_project.__dict__)
 
 
-def get_projects_() -> list[ProjectDetails]:
-    return projects
+def get_projects_(db: Session) -> list[ProjectDetails]:
+    projects = db.execute(select(models.Projects)).scalars().all()
+    return [
+        ProjectDetails(
+            project_id=uuid.UUID(str(project.id)), name=str(project.name), description=str(project.description)
+        )
+        for project in projects
+    ]
 
 
-def update_project_details_(project: ProjectDetails, name: str, description: str | None) -> ProjectDetails:
-    project.description = description
-    project.name = name
+def update_project_details_(project: models.Projects, project_data: Project, db: Session) -> models.Projects:
+    if project_data.name:
+        project.name = project_data.name
+    if project_data.description:
+        project.description = project_data.description
+
+    db.commit()
+    db.refresh(project)
     return project
 
 
-def delete_project_(project: ProjectDetails) -> ProjectDetails:
-    projects.remove(project)
+def delete_project_(project: models.Projects, db: Session) -> models.Projects:
+    db.delete(project)
+    db.commit()
     return project
 
 
 @app.get("/projects")
-async def get_projects() -> list[ProjectDetails]:
-    return get_projects_()
+async def get_projects(db: Session = Depends(get_db)) -> list[ProjectDetails]:
+    return get_projects_(db)
 
 
 @app.post("/projects", status_code=201)
-async def create_project(project: Project) -> ProjectDetails:
-    return create_project_(project)
+async def create_project(project: Project, db: Session = Depends(get_db)) -> ProjectDetails:
+    return create_project_(project, db)
 
 
 @app.get("/project/{project_id}/info")
-async def get_project_details(project_id: uuid.UUID) -> ProjectDetails:
-    return get_project(project_id)
+async def get_project_details(project_id: uuid.UUID, db: Session = Depends(get_db)) -> ProjectDetails:
+    project = get_project(project_id, db)
+    return ProjectDetails(
+        project_id=uuid.UUID(str(project.id)), name=str(project.name), description=str(project.description)
+    )
 
 
 @app.put("/project/{project_id}/info")
-async def update_project_details(project_id: uuid.UUID, project_data: Project) -> ProjectDetails:
-    return update_project_details_(get_project(project_id), project_data.name, project_data.description)
+async def update_project_details(
+    project_id: uuid.UUID, project_data: Project, db: Session = Depends(get_db)
+) -> ProjectDetails:
+    project = update_project_details_(get_project(project_id, db), project_data, db)
+    return ProjectDetails(
+        project_id=uuid.UUID(str(project.id)), name=str(project.name), description=str(project.description)
+    )
 
 
 @app.delete("/project/{project_id}", status_code=204)
-async def delete_project(project_id: uuid.UUID) -> None:
-    delete_project_(get_project(project_id))
+async def delete_project(project_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
+    delete_project_(get_project(project_id, db), db)

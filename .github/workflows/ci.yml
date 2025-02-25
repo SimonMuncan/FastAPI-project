@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install . .[dev]
       - name: Type checking
         run: |
           mypy src
@@ -35,3 +35,11 @@ jobs:
       - name: Run tests
         run: |
           pytest tests/.
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Build Docker image
+        run: docker build -t my-app:latest .
