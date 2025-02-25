@@ -13,10 +13,18 @@ class ProjectDetails(Project):
 
 
 class User(BaseModel):
-    user_id: uuid.UUID = Field(default_factory=uuid.uuid4)
     name: str
     email: EmailStr
     password: str
+
+
+class UserDetails(User):
+    user_id: uuid.UUID = Field(default_factory=uuid.uuid4)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 
 class Document(BaseModel):

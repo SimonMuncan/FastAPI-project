@@ -1,6 +1,8 @@
 import uuid
 
 from fastapi import FastAPI, HTTPException, Depends
+
+from src import auth
 from src.schemas import ProjectDetails, Project
 from src.service import SessionLocal
 from typing import Generator, Any
@@ -9,6 +11,7 @@ from sqlalchemy import select
 import src.models as models
 
 app = FastAPI()
+app.include_router(auth.router)
 
 
 def get_db() -> Generator[Session]:
