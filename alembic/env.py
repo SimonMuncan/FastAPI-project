@@ -15,14 +15,11 @@ load_dotenv()
 config = context.config
 
 POSTGRES_USER = os.environ.get("POSTGRES_USER")
-POSTGRES_PASSWORD=os.environ.get("POSTGRES_PASSWORD")
-POSTGRES_DB=os.environ.get("POSTGRES_DB")
-POSTGRES_PORT=os.environ.get("POSTGRES_PORT")
-POSTGRES_SERVER=os.environ.get("POSTGRES_SERVER")
-URL_DATABASE = (
-    f"postgresql://{POSTGRES_USER}:"
-    f"{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
-)
+POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
+POSTGRES_DB = os.environ.get("POSTGRES_DB")
+POSTGRES_PORT = os.environ.get("POSTGRES_PORT")
+POSTGRES_SERVER = os.environ.get("POSTGRES_SERVER")
+URL_DATABASE = f"postgresql://{POSTGRES_USER}:" f"{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
 config.set_main_option("sqlalchemy.url", URL_DATABASE)
 
 # Interpret the config file for Python logging.

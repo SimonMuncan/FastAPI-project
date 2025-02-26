@@ -38,8 +38,7 @@ class UserProject(Base):
     users = relationship("Users", back_populates="users_projects")
     projects = relationship("Projects", back_populates="users_projects")
     __table_args__ = (
-        sa.Index('one_admin_per_project', 'project_id', unique=True,
-                 postgresql_where=sa.text('is_admin = true')),
+        sa.Index("one_admin_per_project", "project_id", unique=True, postgresql_where=sa.text("is_admin = true")),
     )
 
 
