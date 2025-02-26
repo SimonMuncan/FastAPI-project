@@ -3,12 +3,14 @@ version: '3.8'
 services:
   db:
     image: postgres:15
-    container_name: postgres_container
+    container_name: service-postgres
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_SERVER: ${POSTGRES_SERVER}
     ports:
       - "5433:5432"
     volumes:
@@ -20,13 +22,17 @@ services:
       retries: 5
   app:
     build: .
-    container_name: fastapi_container
+    container_name: fastapi_projects_dashboard
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "80:80"
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-    command: >
-      sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 80"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_SERVER: ${POSTGRES_SERVER}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
