@@ -16,7 +16,7 @@ class User(BaseModel):
     user_id: uuid.UUID = Field(default_factory=uuid.uuid4)
     name: str
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8)
 
 
 class Document(BaseModel):

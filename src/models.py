@@ -2,8 +2,11 @@ import uuid
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID as sa_uuid
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import DeclarativeBase
 
-from src.service import Base
+
+class Base(DeclarativeBase):
+    pass
 
 
 class Projects(Base):
@@ -11,7 +14,7 @@ class Projects(Base):
 
     id = sa.Column(sa_uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = sa.Column(sa.String, nullable=False)
-    description = sa.Column(sa.String, nullable=False)
+    description = sa.Column(sa.String, nullable=True)
     users_projects = relationship("UserProject", back_populates="projects")
     documents = relationship("Documents", back_populates="project")
 
@@ -29,13 +32,15 @@ class Users(Base):
 class UserProject(Base):
     __tablename__ = "user_project"
 
-    id = sa.Column(sa_uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = sa.Column(sa_uuid(as_uuid=True), sa.ForeignKey("projects.id"))
-    user_id = sa.Column(sa_uuid(as_uuid=True), sa.ForeignKey("users.id"))
+    project_id = sa.Column(sa_uuid(as_uuid=True), sa.ForeignKey("projects.id"), primary_key=True)
+    user_id = sa.Column(sa_uuid(as_uuid=True), sa.ForeignKey("users.id"), primary_key=True)
     is_admin = sa.Column(sa.Boolean, default=False)
     users = relationship("Users", back_populates="users_projects")
     projects = relationship("Projects", back_populates="users_projects")
-    __table_args__ = (sa.UniqueConstraint("project_id", "is_admin", name="_unique_admin_per_project"),)
+    __table_args__ = (
+        sa.Index('one_admin_per_project', 'project_id', unique=True,
+                 postgresql_where=sa.text('is_admin = true')),
+    )
 
 
 class Documents(Base):
