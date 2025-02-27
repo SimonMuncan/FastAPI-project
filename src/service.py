@@ -11,7 +11,7 @@ POSTGRES_DB = os.environ.get("POSTGRES_DB")
 POSTGRES_PORT = os.environ.get("POSTGRES_PORT")
 POSTGRES_SERVER = os.environ.get("POSTGRES_SERVER")
 
-URL_DATABASE = f"postgresql://{POSTGRES_USER}:" f"{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
+DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
-engine = create_engine(URL_DATABASE)
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
