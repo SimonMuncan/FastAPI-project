@@ -12,27 +12,21 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_SERVER: ${POSTGRES_SERVER}
     ports:
-      - "5433:5432"
+      - "5433:${POSTGRES_PORT}"
     volumes:
       - /var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
   app:
     build: .
-    container_name: fastapi_projects_dashboard
+    container_name: projects_management
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "80:80"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      POSTGRES_SERVER: ${POSTGRES_SERVER}
-      SECRET_KEY: ${SECRET_KEY}
-      ALGORITHM: ${ALGORITHM}
+    env_file:
+      - .env
