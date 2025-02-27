@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install .[dev]
       - name: Type checking
         run: |
           mypy src
