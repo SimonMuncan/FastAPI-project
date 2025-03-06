@@ -1,13 +1,14 @@
 import hashlib
 import uuid
 from datetime import timedelta
+from io import BytesIO
 from typing import Generator
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
 import pytest
+from fastapi import UploadFile
 from fastapi.testclient import TestClient
-
 import src.models as models
 from src.auth import create_access_token
 from src.main import app
@@ -23,7 +24,49 @@ from src.service import (
     get_user_projects,
     is_project_admin,
     update_project_details_,
+    is_allowed_file,
+    get_documents,
+    get_document_,
+    update_document_,
 )
+
+
+TEST_ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx"}
+
+
+@pytest.fixture
+def mock_s3_client():
+    with patch("src.service.s3_client") as s3_client_mock:
+        yield s3_client_mock
+
+
+@pytest.fixture
+def mock_document() -> models.Documents:
+    return models.Documents(
+        id=str(uuid.uuid4()),
+        project_id=uuid.uuid4(),
+        title="test_document.pdf",
+        file_path="test_project_id/test_file_id_test_document.pdf",
+    )
+
+
+@pytest.fixture
+def mock_upload_file():
+    file_content = BytesIO(b"test file content")
+    return UploadFile(filename="test_document.pdf", file=file_content)
+
+
+@pytest.fixture
+def mock_documents_list(mock_document):
+    return [
+        mock_document,
+        models.Documents(
+            id=str(uuid.uuid4()),
+            project_id=mock_document.project_id,
+            title="another_document.pdf",
+            file_path="test_project_id/another_file_id_another_document.pdf",
+        ),
+    ]
 
 
 @pytest.fixture(autouse=True)
@@ -388,3 +431,84 @@ def test_add_user_to_project_success(mock_db: MagicMock, mock_user: models.Users
 
     mock_db.add.assert_called_once()
     mock_db.commit.assert_called_once()
+
+
+def test_is_allowed_file() -> None:
+    assert is_allowed_file("test.pdf")
+    assert is_allowed_file("test.PDF")
+    assert is_allowed_file("test.doc")
+    assert is_allowed_file("test.docx")
+    assert not is_allowed_file("test.txt")
+    assert not is_allowed_file("test")
+
+
+def test_get_documents(mock_db: MagicMock, mock_documents_list) -> None:
+    project_id = uuid.uuid4()
+    mock_scalar_all = MagicMock()
+    mock_scalar_all.all.return_value = mock_documents_list
+    mock_execute = MagicMock()
+    mock_execute.scalars.return_value = mock_scalar_all
+    mock_db.execute.return_value = mock_execute
+    result = get_documents(project_id, mock_db)
+    mock_db.execute.assert_called_once()
+    assert result == mock_documents_list
+
+
+def test_get_document_found(mock_db: MagicMock, mock_document) -> None:
+    document_id = uuid.uuid4()
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_document
+    result = get_document_(document_id, mock_db)
+    assert result == mock_document
+
+
+def test_get_document_not_found(mock_db: MagicMock) -> None:
+    document_id = uuid.uuid4()
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    result = get_document_(document_id, mock_db)
+    mock_db.execute.assert_called_once()
+    assert result is None
+
+
+def test_update_document(mock_db: MagicMock, mock_document) -> None:
+    new_title = "updated_document.pdf"
+    update_document_(mock_document, new_title, mock_db)
+    assert mock_document.title == new_title
+
+
+def test_get_project_documents_endpoint(
+    client: TestClient, mock_db: MagicMock, mock_token, mock_documents_list
+) -> None:
+    project_id = uuid.uuid4()
+    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_documents_list
+    response = client.get(f"/project/{project_id}/documents", headers={"Authorization": f"Bearer {mock_token}"})
+    assert response.status_code == 200
+    result = response.json()
+    expected_result = []
+    for doc in mock_documents_list:
+        expected_result.append(
+            {
+                "document_id": doc.id,
+                "title": doc.title,
+                "file_path": f"https://documents-projects-dashboard.s3.amazonaws.com/{doc.file_path}",
+            }
+        )
+    assert result == expected_result
+
+
+def test_get_document_endpoint_not_found(client: TestClient, mock_db: MagicMock, mock_token) -> None:
+    document_id = uuid.uuid4()
+    mock_db.execute.return_value.scalar_one_or_none.return_value = None
+    response = client.get(f"/document/{document_id}", headers={"Authorization": f"Bearer {mock_token}"})
+    assert response.status_code == 404
+    assert response.json() == {"detail": f"Document not {document_id} found"}
+
+
+def test_update_document_endpoint(client: TestClient, mock_db: MagicMock, mock_token, mock_document) -> None:
+    document_id = uuid.uuid4()
+    new_title = "updated_document.pdf"
+    with patch("src.service.get_document_", return_value=mock_document):
+        with patch("src.service.update_document_"):
+            response = client.put(
+                f"/document/{document_id}?new_title={new_title}", headers={"Authorization": f"Bearer {mock_token}"}
+            )
+            assert response.status_code == 201

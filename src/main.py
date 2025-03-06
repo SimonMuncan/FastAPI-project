@@ -2,13 +2,14 @@ import uuid
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import AnyUrl
 from sqlalchemy.orm import Session
 from starlette import status
 
 from src.auth import get_current_user, auth_middleware, create_access_token
-from src.schemas import Project, ProjectDetails, CurrentUser, User, OAuth2TokenResponse
+from src.schemas import Project, ProjectDetails, CurrentUser, User, OAuth2TokenResponse, Document
 from src.service import (
     add_user_to_project_,
     create_project_,
@@ -21,6 +22,12 @@ from src.service import (
     update_project_details_,
     create_user_,
     authenticate_user,
+    upload_document_,
+    AWS_BUCKET_NAME,
+    get_documents,
+    get_document_,
+    update_document_,
+    delete_document_,
 )
 
 app = FastAPI()
@@ -122,3 +129,76 @@ async def add_user_to_project(
     if get_project_(db, project_id, user_to_add.id):
         raise HTTPException(status_code=400, detail="User is already in this project")
     add_user_to_project_(user_to_add, project_id, db)
+
+
+@app.post("/project/{project_id}/documents")
+async def upload_document(
+    project_id: uuid.UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> Document:
+    document = upload_document_(project_id, file, db)
+    return Document(
+        document_id=document.id,
+        title=document.title,
+        file_path=AnyUrl(f"https://{AWS_BUCKET_NAME}.s3.amazonaws.com/{document.file_path}"),
+    )
+
+
+@app.get("/project/{project_id}/documents")
+def get_project_documents(
+    project_id: uuid.UUID,
+    db: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> list[Document]:
+    documents = get_documents(project_id, db)
+    return [
+        Document(
+            document_id=document.id,
+            title=document.title,
+            file_path=AnyUrl(f"https://{AWS_BUCKET_NAME}.s3.amazonaws.com/{document.file_path}"),
+        )
+        for document in documents
+    ]
+
+
+@app.get("/document/{document_id}")
+def get_document(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> Document:
+    document = get_document_(document_id, db)
+    if not document:
+        raise HTTPException(status_code=404, detail=f"Document not {document_id} found")
+    return Document(
+        document_id=document.id,
+        title=document.title,
+        file_path=AnyUrl(f"https://{AWS_BUCKET_NAME}.s3.amazonaws.com/{document.file_path}"),
+    )
+
+
+@app.put("/document/{document_id}", status_code=201)
+def update_document(
+    document_id: uuid.UUID,
+    new_title: str,
+    db: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    document = get_document_(document_id, db)
+    if not document:
+        raise HTTPException(status_code=404, detail=f"Document not {document_id} found")
+    update_document_(document, new_title, db)
+
+
+@app.delete("/document/{document_id}", status_code=204)
+def delete_document(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    document = get_document_(document_id, db)
+    if not document:
+        raise HTTPException(status_code=404, detail=f"Document not {document_id} found")
+    delete_document_(document, db)

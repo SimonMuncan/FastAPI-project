@@ -1,11 +1,14 @@
 import os
 import uuid
 from typing import Generator
+
+import boto3
 from dotenv import load_dotenv
+from fastapi import UploadFile, HTTPException
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 import hashlib
-from src.models import Projects, UserProject, Users
+from src.models import Projects, UserProject, Users, Documents
 from src.schemas import Project, User
 
 load_dotenv()
@@ -16,10 +19,17 @@ POSTGRES_DB = os.environ.get("POSTGRES_DB", "")
 POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
 POSTGRES_SERVER = os.environ.get("POSTGRES_SERVER", "localhost")
 
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME", "")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx"}
+
 DATABASE_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+s3_client = boto3.client("s3")
 
 
 def get_session() -> Generator[Session]:
@@ -113,4 +123,43 @@ def get_user(user_email: str, db: Session) -> Users | None:
 def add_user_to_project_(user: Users, project_id: uuid.UUID, db: Session) -> None:
     user_project = UserProject(project_id=project_id, user_id=user.id, is_admin=False)
     db.add(user_project)
+    db.commit()
+
+
+def is_allowed_file(filename: str) -> bool:
+    return any(filename.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS)
+
+
+def upload_document_(project_id: uuid.UUID, file: UploadFile, db: Session) -> Documents:
+    file_id = str(uuid.uuid4())
+    if file.filename is None:
+        raise HTTPException(status_code=400, detail="File does not have name")
+    if not is_allowed_file(file.filename):
+        raise HTTPException(status_code=400, detail="Only PDF and DOC files are allowed")
+    s3_key = f"{project_id}/{file_id}_{file.filename}"
+    s3_client.upload_fileobj(file.file, AWS_BUCKET_NAME, s3_key)
+    document = Documents(id=file_id, project_id=project_id, title=file.filename, file_path=s3_key)
+    db.add(document)
+    db.commit()
+    return document
+
+
+def get_documents(project_id: uuid.UUID, db: Session) -> list[Documents]:
+    query = select(Documents).where(Documents.project_id == project_id)
+    return list(db.execute(query).scalars().all())
+
+
+def get_document_(document_id: uuid.UUID, db: Session) -> Documents | None:
+    query = select(Documents).where(Documents.id == document_id)
+    return db.execute(query).scalar_one_or_none()
+
+
+def update_document_(document: Documents, new_title: str, db: Session) -> None:
+    document.title = new_title
+    db.commit()
+
+
+def delete_document_(document: Documents, db: Session) -> None:
+    s3_client.delete_object(Bucket=AWS_BUCKET_NAME, Key=document.file_path)
+    db.delete(document)
     db.commit()
