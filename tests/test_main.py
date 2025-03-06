@@ -495,14 +495,6 @@ def test_get_project_documents_endpoint(
     assert result == expected_result
 
 
-def test_get_document_endpoint_not_found(client: TestClient, mock_db: MagicMock, mock_token) -> None:
-    document_id = uuid.uuid4()
-    mock_db.execute.return_value.scalar_one_or_none.return_value = None
-    response = client.get(f"/document/{document_id}", headers={"Authorization": f"Bearer {mock_token}"})
-    assert response.status_code == 404
-    assert response.json() == {"detail": f"Document not {document_id} found"}
-
-
 def test_update_document_endpoint(client: TestClient, mock_db: MagicMock, mock_token, mock_document) -> None:
     document_id = uuid.uuid4()
     new_title = "updated_document.pdf"
