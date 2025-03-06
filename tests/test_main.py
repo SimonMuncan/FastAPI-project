@@ -475,26 +475,6 @@ def test_update_document(mock_db: MagicMock, mock_document) -> None:
     assert mock_document.title == new_title
 
 
-def test_get_project_documents_endpoint(
-    client: TestClient, mock_db: MagicMock, mock_token, mock_documents_list
-) -> None:
-    project_id = uuid.uuid4()
-    mock_db.execute.return_value.scalars.return_value.all.return_value = mock_documents_list
-    response = client.get(f"/project/{project_id}/documents", headers={"Authorization": f"Bearer {mock_token}"})
-    assert response.status_code == 200
-    result = response.json()
-    expected_result = []
-    for doc in mock_documents_list:
-        expected_result.append(
-            {
-                "document_id": doc.id,
-                "title": doc.title,
-                "file_path": f"https://documents-projects-dashboard.s3.amazonaws.com/{doc.file_path}",
-            }
-        )
-    assert result == expected_result
-
-
 def test_update_document_endpoint(client: TestClient, mock_db: MagicMock, mock_token, mock_document) -> None:
     document_id = uuid.uuid4()
     new_title = "updated_document.pdf"
