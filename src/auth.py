@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from starlette import status
-from starlette.responses import Response, JSONResponse
+from starlette.responses import JSONResponse, Response
 
 from src.schemas import CurrentUser
 
