@@ -16,6 +16,7 @@ dependencies = [
     "PyJWT==2.10.1",
     "boto3==1.37.7",
     "boto3-stubs==1.37.7",
+    "python-magic==0.4.27"
 ]
 
 [project.optional-dependencies]

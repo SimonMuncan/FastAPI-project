@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import UploadFile
 from fastapi.testclient import TestClient
+
 import src.models as models
 from src.auth import create_access_token
 from src.main import app
@@ -18,20 +19,16 @@ from src.service import (
     authenticate_user,
     create_user_,
     delete_project_,
+    get_document_,
     get_project_,
+    get_project_documents_,
     get_session,
     get_user,
     get_user_projects,
     is_project_admin,
-    update_project_details_,
-    is_allowed_file,
-    get_documents,
-    get_document_,
     update_document_,
+    update_project_details_,
 )
-
-
-TEST_ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx"}
 
 
 @pytest.fixture
@@ -41,9 +38,9 @@ def mock_s3_client():
 
 
 @pytest.fixture
-def mock_document() -> models.Documents:
-    return models.Documents(
-        id=str(uuid.uuid4()),
+def mock_document() -> Generator[models.Documents]:
+    yield models.Documents(
+        id=uuid.uuid4(),
         project_id=uuid.uuid4(),
         title="test_document.pdf",
         file_path="test_project_id/test_file_id_test_document.pdf",
@@ -51,17 +48,18 @@ def mock_document() -> models.Documents:
 
 
 @pytest.fixture
-def mock_upload_file():
+def mock_upload_file() -> Generator[UploadFile]:
     file_content = BytesIO(b"test file content")
-    return UploadFile(filename="test_document.pdf", file=file_content)
+    yield UploadFile(filename="test_document.pdf", file=file_content)
+    file_content.close()
 
 
 @pytest.fixture
-def mock_documents_list(mock_document):
-    return [
+def mock_documents_list(mock_document) -> Generator[list[models.Documents]]:
+    yield [
         mock_document,
         models.Documents(
-            id=str(uuid.uuid4()),
+            id=uuid.uuid4(),
             project_id=mock_document.project_id,
             title="another_document.pdf",
             file_path="test_project_id/another_file_id_another_document.pdf",
@@ -433,15 +431,6 @@ def test_add_user_to_project_success(mock_db: MagicMock, mock_user: models.Users
     mock_db.commit.assert_called_once()
 
 
-def test_is_allowed_file() -> None:
-    assert is_allowed_file("test.pdf")
-    assert is_allowed_file("test.PDF")
-    assert is_allowed_file("test.doc")
-    assert is_allowed_file("test.docx")
-    assert not is_allowed_file("test.txt")
-    assert not is_allowed_file("test")
-
-
 def test_get_documents(mock_db: MagicMock, mock_documents_list) -> None:
     project_id = uuid.uuid4()
     mock_scalar_all = MagicMock()
@@ -449,7 +438,7 @@ def test_get_documents(mock_db: MagicMock, mock_documents_list) -> None:
     mock_execute = MagicMock()
     mock_execute.scalars.return_value = mock_scalar_all
     mock_db.execute.return_value = mock_execute
-    result = get_documents(project_id, mock_db)
+    result = get_project_documents_(project_id, mock_db)
     mock_db.execute.assert_called_once()
     assert result == mock_documents_list
 
