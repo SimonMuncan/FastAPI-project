@@ -17,16 +17,24 @@ from src.service import (
     create_project_,
     create_s2_url,
     create_user_,
-    delete_document_,
+)
+from src.service import delete_document as delete_document_
+from src.service import (
     delete_project_,
-    get_document_,
+)
+from src.service import get_document as get_document_
+from src.service import (
     get_project_,
-    get_project_documents_,
+)
+from src.service import get_project_documents as get_project_documents_
+from src.service import (
     get_session,
     get_user,
     get_user_projects,
     is_project_admin,
-    update_document_,
+)
+from src.service import update_document as update_document_
+from src.service import (
     update_project_details_,
     upload_document_,
 )

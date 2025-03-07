@@ -19,14 +19,14 @@ from src.service import (
     authenticate_user,
     create_user_,
     delete_project_,
-    get_document_,
+    get_document,
     get_project_,
-    get_project_documents_,
+    get_project_documents,
     get_session,
     get_user,
     get_user_projects,
     is_project_admin,
-    update_document_,
+    update_document,
     update_project_details_,
 )
 
@@ -438,7 +438,7 @@ def test_get_documents(mock_db: MagicMock, mock_documents_list) -> None:
     mock_execute = MagicMock()
     mock_execute.scalars.return_value = mock_scalar_all
     mock_db.execute.return_value = mock_execute
-    result = get_project_documents_(project_id, mock_db)
+    result = get_project_documents(project_id, mock_db)
     mock_db.execute.assert_called_once()
     assert result == mock_documents_list
 
@@ -446,29 +446,29 @@ def test_get_documents(mock_db: MagicMock, mock_documents_list) -> None:
 def test_get_document_found(mock_db: MagicMock, mock_document) -> None:
     document_id = uuid.uuid4()
     mock_db.execute.return_value.scalar_one_or_none.return_value = mock_document
-    result = get_document_(document_id, mock_db)
+    result = get_document(document_id, mock_db)
     assert result == mock_document
 
 
 def test_get_document_not_found(mock_db: MagicMock) -> None:
     document_id = uuid.uuid4()
     mock_db.execute.return_value.scalar_one_or_none.return_value = None
-    result = get_document_(document_id, mock_db)
+    result = get_document(document_id, mock_db)
     mock_db.execute.assert_called_once()
     assert result is None
 
 
 def test_update_document(mock_db: MagicMock, mock_document) -> None:
     new_title = "updated_document.pdf"
-    update_document_(mock_document, new_title, mock_db)
+    update_document(mock_document, new_title, mock_db)
     assert mock_document.title == new_title
 
 
 def test_update_document_endpoint(client: TestClient, mock_db: MagicMock, mock_token, mock_document) -> None:
     document_id = uuid.uuid4()
     new_title = "updated_document.pdf"
-    with patch("src.service.get_document_", return_value=mock_document):
-        with patch("src.service.update_document_"):
+    with patch("src.service.get_document", return_value=mock_document):
+        with patch("src.service.update_document"):
             response = client.put(
                 f"/document/{document_id}?new_title={new_title}", headers={"Authorization": f"Bearer {mock_token}"}
             )

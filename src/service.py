@@ -149,22 +149,22 @@ def upload_document_(project_id: uuid.UUID, file: UploadFile, db: Session) -> Do
     return document
 
 
-def get_project_documents_(project_id: uuid.UUID, db: Session) -> list[Documents]:
+def get_project_documents(project_id: uuid.UUID, db: Session) -> list[Documents]:
     query = select(Documents).where(Documents.project_id == project_id)
     return list(db.execute(query).scalars().all())
 
 
-def get_document_(document_id: uuid.UUID, db: Session) -> Documents | None:
+def get_document(document_id: uuid.UUID, db: Session) -> Documents | None:
     query = select(Documents).where(Documents.id == document_id)
     return db.execute(query).scalar_one_or_none()
 
 
-def update_document_(document: Documents, new_title: str, db: Session) -> None:
+def update_document(document: Documents, new_title: str, db: Session) -> None:
     document.title = new_title
     db.commit()
 
 
-def delete_document_(document: Documents, db: Session) -> None:
+def delete_document(document: Documents, db: Session) -> None:
     s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=document.file_path)
     db.delete(document)
     db.commit()
